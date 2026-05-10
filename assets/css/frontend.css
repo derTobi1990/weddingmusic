@@ -179,3 +179,21 @@
     .mw-form-inner { padding: 24px 18px; }
     .mw-field-row { grid-template-columns: 1fr; }
 }
+
+/* Service badges in search results */
+.mw-result-badges {
+    margin-top: 4px;
+    display: flex;
+    gap: 4px;
+}
+.mw-badge-svc {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+.mw-badge-spotify { background: #1DB954; color: #fff; }
+.mw-badge-apple   { background: #fa243c; color: #fff; }

@@ -77,17 +77,21 @@
                         return;
                     }
                     results.forEach(function (r) {
+                        var badges = '';
+                        if (r.sources && r.sources.indexOf('spotify') !== -1) badges += '<span class="mw-badge-svc mw-badge-spotify">Spotify</span>';
+                        if (r.sources && r.sources.indexOf('apple') !== -1)   badges += '<span class="mw-badge-svc mw-badge-apple">Apple</span>';
                         var html = $(
                             '<div class="mw-admin-result">' +
                                 (r.cover ? '<img src="' + r.cover + '" alt="">' : '<div style="width:40px;height:40px;background:#ddd;border-radius:3px"></div>') +
                                 '<div class="mw-admin-result-meta">' +
                                     '<strong></strong><span></span>' +
+                                    '<div>' + badges + '</div>' +
                                 '</div>' +
                                 '<div class="mw-admin-result-duration">' + r.duration + '</div>' +
                             '</div>'
                         );
                         html.find('strong').text(r.titel);
-                        html.find('span').text(r.interpret);
+                        html.find('.mw-admin-result-meta > span').text(r.interpret);
                         html.data('track', r);
                         $adminResults.append(html);
                     });
@@ -101,7 +105,8 @@
             $(this).addClass('is-selected');
             $('#titel').val(t.titel);
             $('#interpret').val(t.interpret);
-            $('#spotify_url').val(t.url);
+            $('#spotify_url').val(t.spotify_url || '');
+            $('#apple_url').val(t.apple_url || '');
             $adminSearch.val(t.titel + ' – ' + t.interpret);
             setTimeout(function () { $adminResults.empty(); }, 300);
         });

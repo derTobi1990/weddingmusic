@@ -88,3 +88,17 @@
 .mw-btn-apple:hover { opacity: .85; }
 .mw-btn-danger  { color: #d63638 !important; border-color: #d63638 !important; }
 .mw-btn-danger:hover { background: #d63638 !important; color: #fff !important; }
+
+.mw-badge-svc {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    margin-right: 4px;
+    margin-top: 3px;
+}
+.mw-badge-spotify { background: #1DB954; color: #fff; }
+.mw-badge-apple   { background: #fa243c; color: #fff; }

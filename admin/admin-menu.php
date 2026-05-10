@@ -166,8 +166,45 @@ class MW_Admin {
         $query = sanitize_text_field( $_POST['query'] ?? '' );
         if ( strlen( $query ) < 2 ) wp_send_json_success( array() );
 
-        $results = MW_Spotify::search( $query, 8 );
-        wp_send_json_success( $results );
+        $spotify_results = MW_Spotify::search( $query, 8 );
+        $apple_results   = MW_Apple_Music::search( $query, 8 );
+
+        $merged = array();
+        foreach ( $spotify_results as $r ) {
+            $key = strtolower( trim( $r['titel'] ) . '|' . trim( $r['interpret'] ) );
+            $merged[ $key ] = array(
+                'titel'       => $r['titel'],
+                'interpret'   => $r['interpret'],
+                'cover'       => $r['cover'],
+                'duration'    => $r['duration'],
+                'spotify_url' => $r['url'],
+                'apple_url'   => '',
+                'sources'     => array( 'spotify' ),
+            );
+        }
+        foreach ( $apple_results as $r ) {
+            $key = strtolower( trim( $r['titel'] ) . '|' . trim( $r['interpret'] ) );
+            if ( isset( $merged[ $key ] ) ) {
+                $merged[ $key ]['apple_url'] = $r['url'];
+                $merged[ $key ]['sources'][] = 'apple';
+                if ( ! $merged[ $key ]['cover'] ) $merged[ $key ]['cover'] = $r['cover'];
+            } else {
+                $merged[ $key ] = array(
+                    'titel'       => $r['titel'],
+                    'interpret'   => $r['interpret'],
+                    'cover'       => $r['cover'],
+                    'duration'    => $r['duration'],
+                    'spotify_url' => '',
+                    'apple_url'   => $r['url'],
+                    'sources'     => array( 'apple' ),
+                );
+            }
+        }
+        usort( $merged, function ( $a, $b ) {
+            return count( $b['sources'] ) - count( $a['sources'] );
+        } );
+
+        wp_send_json_success( array_slice( array_values( $merged ), 0, 10 ) );
     }
 
     public static function page_liste()         { include MW_PLUGIN_DIR . 'admin/views/liste.php'; }

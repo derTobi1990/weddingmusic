@@ -3,14 +3,14 @@
  * Plugin Name: Hochzeit Musikwünsche
  * Plugin URI:  https://alinaundtobias.de
  * Description: Sammelt Musikwünsche der Gäste mit Spotify/Apple Music Integration und automatischer Playlist-Synchronisation
- * Version:     1.3.0
+ * Version:     1.4.0
  * Author:      Tobias Hirche
  * Text Domain: musikwuensche
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'MW_VERSION',     '1.3.0' );
+define( 'MW_VERSION',     '1.4.0' );
 define( 'MW_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'MW_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
 define( 'MW_TABLE',       'musikwuensche' );

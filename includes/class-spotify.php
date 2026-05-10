@@ -162,11 +162,40 @@ class MW_Spotify {
             return array( 'success' => false, 'error' => $response->get_error_message() );
         }
         $code = wp_remote_retrieve_response_code( $response );
+        $body = wp_remote_retrieve_body( $response );
+
         if ( $code === 201 || $code === 200 ) {
             return array( 'success' => true );
         }
-        $body = wp_remote_retrieve_body( $response );
-        return array( 'success' => false, 'error' => "HTTP {$code}: " . substr( $body, 0, 200 ) );
+
+        // Detailed error parsing
+        $parsed = json_decode( $body, true );
+        $msg    = isset( $parsed['error']['message'] ) ? $parsed['error']['message'] : substr( $body, 0, 200 );
+
+        // Log who is logged in vs who owns the playlist for diagnosis
+        if ( $code === 403 ) {
+            $me = wp_remote_get( 'https://api.spotify.com/v1/me', array(
+                'headers' => array( 'Authorization' => 'Bearer ' . $token ),
+                'timeout' => 10,
+            ) );
+            $playlist = wp_remote_get( "https://api.spotify.com/v1/playlists/{$playlist_id}", array(
+                'headers' => array( 'Authorization' => 'Bearer ' . $token ),
+                'timeout' => 10,
+            ) );
+            $me_data = json_decode( wp_remote_retrieve_body( $me ), true );
+            $pl_data = json_decode( wp_remote_retrieve_body( $playlist ), true );
+            $me_id   = $me_data['id'] ?? '?';
+            $pl_owner = $pl_data['owner']['id'] ?? '?';
+            $pl_name  = $pl_data['name'] ?? '?';
+
+            $diag = "HTTP 403: {$msg}\n\n--- Diagnose ---\n";
+            $diag .= "Eingeloggt als: {$me_id}\n";
+            $diag .= "Playlist-Besitzer: {$pl_owner}\n";
+            $diag .= "Playlist-Name: {$pl_name}";
+            return array( 'success' => false, 'error' => $diag );
+        }
+
+        return array( 'success' => false, 'error' => "HTTP {$code}: {$msg}" );
     }
 
     /** Build OAuth authorization URL for the admin to authorize the playlist */

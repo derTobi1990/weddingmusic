@@ -95,14 +95,60 @@ class MW_Shortcode {
         return ob_get_clean();
     }
 
-    /** AJAX: Spotify search autocomplete */
+    /** AJAX: search both Spotify and Apple Music, merge results */
     public static function ajax_search() {
         check_ajax_referer( 'mw_frontend_nonce', 'nonce' );
         $query = sanitize_text_field( $_POST['query'] ?? '' );
         if ( strlen( $query ) < 2 ) wp_send_json_success( array() );
 
-        $results = MW_Spotify::search( $query, 6 );
-        wp_send_json_success( $results );
+        $spotify_results = MW_Spotify::search( $query, 6 );
+        $apple_results   = MW_Apple_Music::search( $query, 6 );
+
+        // Merge results: each entry can have spotify_id/url and/or apple_id/url
+        // Match by lowercased "titel|interpret"
+        $merged = array();
+        foreach ( $spotify_results as $r ) {
+            $key = strtolower( trim( $r['titel'] ) . '|' . trim( $r['interpret'] ) );
+            $merged[ $key ] = array(
+                'titel'       => $r['titel'],
+                'interpret'   => $r['interpret'],
+                'cover'       => $r['cover'],
+                'duration'    => $r['duration'],
+                'spotify_id'  => $r['id'],
+                'spotify_url' => $r['url'],
+                'apple_id'    => null,
+                'apple_url'   => null,
+                'sources'     => array( 'spotify' ),
+            );
+        }
+        foreach ( $apple_results as $r ) {
+            $key = strtolower( trim( $r['titel'] ) . '|' . trim( $r['interpret'] ) );
+            if ( isset( $merged[ $key ] ) ) {
+                $merged[ $key ]['apple_id']  = $r['id'];
+                $merged[ $key ]['apple_url'] = $r['url'];
+                $merged[ $key ]['sources'][] = 'apple';
+            } else {
+                $merged[ $key ] = array(
+                    'titel'       => $r['titel'],
+                    'interpret'   => $r['interpret'],
+                    'cover'       => $r['cover'],
+                    'duration'    => $r['duration'],
+                    'spotify_id'  => null,
+                    'spotify_url' => null,
+                    'apple_id'    => $r['id'],
+                    'apple_url'   => $r['url'],
+                    'sources'     => array( 'apple' ),
+                );
+            }
+        }
+
+        // Prefer entries that exist in both, then by source priority
+        usort( $merged, function ( $a, $b ) {
+            return count( $b['sources'] ) - count( $a['sources'] );
+        } );
+
+        // Limit to 8 results
+        wp_send_json_success( array_slice( array_values( $merged ), 0, 8 ) );
     }
 
     /** AJAX: submit a wish */

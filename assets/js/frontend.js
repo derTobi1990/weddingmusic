@@ -36,16 +36,22 @@
             $results.empty();
             if (!results.length) return;
             results.forEach(function (r) {
+                var badges = '';
+                if (r.sources && r.sources.indexOf('spotify') !== -1) badges += '<span class="mw-badge-svc mw-badge-spotify">Spotify</span>';
+                if (r.sources && r.sources.indexOf('apple') !== -1)   badges += '<span class="mw-badge-svc mw-badge-apple">Apple</span>';
                 var html = $(
-                    '<div class="mw-search-result" data-id="' + r.id + '" data-url="' + r.url + '">' +
+                    '<div class="mw-search-result">' +
                         (r.cover ? '<img src="' + r.cover + '" alt="">' : '<div class="mw-cover-placeholder">♪</div>') +
                         '<div class="mw-result-meta">' +
-                            '<strong>' + escapeHtml(r.titel) + '</strong>' +
-                            '<span>' + escapeHtml(r.interpret) + '</span>' +
+                            '<strong></strong>' +
+                            '<span></span>' +
+                            '<div class="mw-result-badges">' + badges + '</div>' +
                         '</div>' +
                         '<div class="mw-result-duration">' + r.duration + '</div>' +
                     '</div>'
                 );
+                html.find('strong').text(r.titel);
+                html.find('.mw-result-meta > span').text(r.interpret);
                 html.data('track', r);
                 $results.append(html);
             });
@@ -59,11 +65,12 @@
 
             $titel.val(track.titel);
             $interpret.val(track.interpret);
-            $spotifyId.val(track.id);
-            $spotifyUrl.val(track.url);
+            $spotifyId.val(track.spotify_id || '');
+            $spotifyUrl.val(track.spotify_url || '');
+            $('#mw-apple-id').val(track.apple_id || '');
+            $('#mw-apple-url').val(track.apple_url || '');
             $search.val(track.titel + ' – ' + track.interpret);
 
-            // Hide other results, keep only selected
             setTimeout(function () { $results.empty(); }, 300);
         });
 
