@@ -10,6 +10,7 @@ class MW_Admin {
 
         add_action( 'wp_ajax_mw_sync_spotify', array( __CLASS__, 'ajax_sync_spotify' ) );
         add_action( 'wp_ajax_mw_sync_apple',   array( __CLASS__, 'ajax_sync_apple' ) );
+        add_action( 'wp_ajax_mw_admin_search', array( __CLASS__, 'ajax_admin_search' ) );
         add_action( 'admin_post_mw_export_xlsx', array( 'MW_Export', 'download_xlsx' ) );
         add_action( 'admin_init', array( __CLASS__, 'handle_spotify_callback' ) );
     }
@@ -156,6 +157,17 @@ class MW_Admin {
             wp_send_json_success( array( 'message' => 'Zur Apple-Music-Playlist hinzugefügt.' ) );
         }
         wp_send_json_error( array( 'message' => $result['error'] ) );
+    }
+
+    public static function ajax_admin_search() {
+        check_ajax_referer( 'mw_admin_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( array( 'message' => 'Forbidden' ) );
+
+        $query = sanitize_text_field( $_POST['query'] ?? '' );
+        if ( strlen( $query ) < 2 ) wp_send_json_success( array() );
+
+        $results = MW_Spotify::search( $query, 8 );
+        wp_send_json_success( $results );
     }
 
     public static function page_liste()         { include MW_PLUGIN_DIR . 'admin/views/liste.php'; }

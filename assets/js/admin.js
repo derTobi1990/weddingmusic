@@ -54,5 +54,56 @@
                 $btn.prop('disabled', false).text('🔍 Tokens jetzt testen');
             });
         });
+
+        // Admin search on "Neuer Wunsch" page
+        var $adminSearch = $('#mw-admin-search');
+        var $adminResults = $('#mw-admin-search-results');
+        var adminTimer = null;
+
+        $adminSearch.on('input', function () {
+            var q = $(this).val().trim();
+            clearTimeout(adminTimer);
+            if (q.length < 2) { $adminResults.empty(); return; }
+            adminTimer = setTimeout(function () {
+                $.post(MW_ADMIN.ajaxurl, {
+                    action: 'mw_admin_search',
+                    nonce: MW_ADMIN.nonce,
+                    query: q
+                }, function (res) {
+                    var results = res.data || [];
+                    $adminResults.empty();
+                    if (!results.length) {
+                        $adminResults.html('<p style="color:#888;padding:8px">Keine Treffer.</p>');
+                        return;
+                    }
+                    results.forEach(function (r) {
+                        var html = $(
+                            '<div class="mw-admin-result">' +
+                                (r.cover ? '<img src="' + r.cover + '" alt="">' : '<div style="width:40px;height:40px;background:#ddd;border-radius:3px"></div>') +
+                                '<div class="mw-admin-result-meta">' +
+                                    '<strong></strong><span></span>' +
+                                '</div>' +
+                                '<div class="mw-admin-result-duration">' + r.duration + '</div>' +
+                            '</div>'
+                        );
+                        html.find('strong').text(r.titel);
+                        html.find('span').text(r.interpret);
+                        html.data('track', r);
+                        $adminResults.append(html);
+                    });
+                });
+            }, 300);
+        });
+
+        $adminResults.on('click', '.mw-admin-result', function () {
+            var t = $(this).data('track');
+            $('.mw-admin-result').removeClass('is-selected');
+            $(this).addClass('is-selected');
+            $('#titel').val(t.titel);
+            $('#interpret').val(t.interpret);
+            $('#spotify_url').val(t.url);
+            $adminSearch.val(t.titel + ' – ' + t.interpret);
+            setTimeout(function () { $adminResults.empty(); }, 300);
+        });
     });
 }(jQuery));
