@@ -105,12 +105,44 @@ $spotify_auth_url = MW_Spotify::build_auth_url( $redirect_uri );
                     </td>
                 </tr>
                 <tr>
-                    <th><label>Playlist-ID
-                        <span class="mw-help" data-tooltip="Eigene Playlist in Apple Music erstellen → Teilen → Link kopieren&#10;Beispiel: music.apple.com/de/playlist/.../pl.u-xxxxxx&#10;ID = pl.u-xxxxxx">ℹ</span>
+                    <th><label>Playlist
+                        <span class="mw-help" data-tooltip="Sobald Developer & User Token eingetragen und gespeichert sind, erscheint hier eine Liste deiner Apple-Music-Library-Playlists zur Auswahl.">ℹ</span>
                     </label></th>
-                    <td><input type="text" name="apple_playlist_id" class="regular-text"
-                        value="<?php echo esc_attr( $s['apple_playlist_id'] ); ?>"
-                        placeholder="pl.u-xxxxxxx"></td>
+                    <td>
+                        <?php
+                        $apple_playlists = ( $s['apple_dev_token'] && $s['apple_user_token'] )
+                            ? MW_Apple_Music::list_user_playlists()
+                            : array();
+
+                        if ( $apple_playlists ) : ?>
+                            <select name="apple_playlist_id" class="regular-text">
+                                <option value="">– Playlist wählen –</option>
+                                <?php foreach ( $apple_playlists as $p ) : ?>
+                                    <option value="<?php echo esc_attr( $p['id'] ); ?>"
+                                        <?php selected( $s['apple_playlist_id'], $p['id'] ); ?>>
+                                        <?php echo esc_html( $p['name'] ); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="description">
+                                <?php echo count( $apple_playlists ); ?> bearbeitbare Library-Playlists gefunden.
+                                <?php if ( $s['apple_playlist_id'] ) : ?>
+                                    – Aktuelle ID: <code><?php echo esc_html( $s['apple_playlist_id'] ); ?></code>
+                                <?php endif; ?>
+                            </p>
+                        <?php else : ?>
+                            <input type="text" name="apple_playlist_id" class="regular-text"
+                                value="<?php echo esc_attr( $s['apple_playlist_id'] ); ?>"
+                                placeholder="p.xxxxxxxxx">
+                            <p class="description">
+                                <?php if ( ! $s['apple_dev_token'] || ! $s['apple_user_token'] ) : ?>
+                                    Trage erst Developer Token und User Token ein und speichere – dann erscheint hier ein Dropdown mit deinen Playlists.
+                                <?php else : ?>
+                                    Tokens sind eingetragen, aber die Playlist-Liste konnte nicht geladen werden. Möglicherweise sind die Tokens abgelaufen.
+                                <?php endif; ?>
+                            </p>
+                        <?php endif; ?>
+                    </td>
                 </tr>
                 <tr>
                     <th><label>Status</label></th>

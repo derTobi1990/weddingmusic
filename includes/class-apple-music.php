@@ -89,6 +89,39 @@ class MW_Apple_Music {
         );
     }
 
+    /** Fetch user's library playlists (only library, only editable) */
+    public static function list_user_playlists() {
+        $dev  = self::get_developer_token();
+        $user = MW_Settings::get( 'apple_user_token' );
+        if ( ! $dev || ! $user ) return array();
+
+        $response = wp_remote_get( 'https://api.music.apple.com/v1/me/library/playlists?limit=100', array(
+            'headers' => array(
+                'Authorization'    => 'Bearer ' . $dev,
+                'Music-User-Token' => $user,
+                'Origin'           => 'https://music.apple.com',
+            ),
+            'timeout' => 15,
+        ) );
+        if ( is_wp_error( $response ) ) return array();
+        if ( wp_remote_retrieve_response_code( $response ) !== 200 ) return array();
+
+        $body = json_decode( wp_remote_retrieve_body( $response ), true );
+        if ( empty( $body['data'] ) ) return array();
+
+        $playlists = array();
+        foreach ( $body['data'] as $p ) {
+            $a = $p['attributes'] ?? array();
+            // Only editable playlists (canEdit = true)
+            if ( empty( $a['canEdit'] ) ) continue;
+            $playlists[] = array(
+                'id'   => $p['id'],
+                'name' => $a['name'] ?? '(unbenannt)',
+            );
+        }
+        return $playlists;
+    }
+
     public static function add_to_playlist( $track_id ) {
         $dev_token   = self::get_developer_token();
         $user_token  = MW_Settings::get( 'apple_user_token' );
