@@ -74,31 +74,35 @@ $spotify_auth_url = MW_Spotify::build_auth_url( $redirect_uri );
         <!-- ============== APPLE MUSIC ============== -->
         <div class="mw-card">
             <h2>🍎 Apple-Music-Integration
-                <span class="mw-help" data-tooltip="Du brauchst eine kostenpflichtige Apple-Developer-Mitgliedschaft (99€/Jahr).&#10;1. https://developer.apple.com/account öffnen&#10;2. Certificates, IDs & Profiles → Keys → +&#10;3. 'MusicKit' aktivieren, Key erstellen → .p8-Datei downloaden&#10;4. Team ID findest du oben rechts in deinem Account&#10;5. Key ID steht im erstellten Key&#10;6. Den Inhalt der .p8-Datei (inkl. -----BEGIN... und -----END...) hier einfügen">ℹ</span>
+                <span class="mw-help" data-tooltip="Diese Methode benötigt KEINEN kostenpflichtigen Developer-Account.&#10;Die Tokens werden direkt aus deinem eingeloggten Apple-Music-Browser ausgelesen.&#10;Die Tokens laufen ca. alle 180 Tage ab und müssen dann erneuert werden.">ℹ</span>
             </h2>
+            <p class="description" style="margin-bottom:16px">
+                <strong>Anleitung – So holst du dir die Tokens (kein Developer-Account nötig):</strong><br>
+                1. In Chrome <a href="https://music.apple.com" target="_blank">music.apple.com</a> öffnen und mit deiner Apple-ID einloggen<br>
+                2. Mit <kbd>F12</kbd> die Entwicklertools öffnen → Reiter „<strong>Network</strong>" (Netzwerkanalyse)<br>
+                3. Auf der Apple-Music-Seite irgendwas anklicken (z.B. ein Album öffnen) damit Requests entstehen<br>
+                4. Im Network-Tab einen Request zu <code>amp-api.music.apple.com</code> anklicken<br>
+                5. Im rechten Bereich unter „Request Headers" zwei Werte kopieren:
+                <ul style="margin-left:20px;margin-top:6px">
+                    <li><code>authorization: Bearer <strong>eyJh...</strong></code> → das ist der <strong>Developer Token</strong> (langer JWT-String)</li>
+                    <li><code>media-user-token: <strong>Atxxx...</strong></code> → das ist der <strong>Music User Token</strong></li>
+                </ul>
+            </p>
             <table class="form-table">
                 <tr>
-                    <th><label>Team ID</label></th>
-                    <td><input type="text" name="apple_team_id" class="regular-text"
-                        value="<?php echo esc_attr( $s['apple_team_id'] ); ?>"
-                        placeholder="z.B. ABCDE12345"></td>
+                    <th><label>Developer Token (Bearer)</label></th>
+                    <td>
+                        <textarea name="apple_dev_token" rows="4" class="large-text" style="font-family:monospace;font-size:11px"
+                            placeholder="eyJhbGciOiJFUzI1NiIs..."><?php echo esc_textarea( $s['apple_dev_token'] ); ?></textarea>
+                        <p class="description">Beginnt mit <code>eyJ</code>, ist ein langer JWT-String (oft 600+ Zeichen). Ohne „Bearer" davor einfügen!</p>
+                    </td>
                 </tr>
                 <tr>
-                    <th><label>Key ID</label></th>
-                    <td><input type="text" name="apple_key_id" class="regular-text"
-                        value="<?php echo esc_attr( $s['apple_key_id'] ); ?>"
-                        placeholder="z.B. AB12CD34EF"></td>
-                </tr>
-                <tr>
-                    <th><label>Private Key (.p8 Inhalt)</label></th>
-                    <td><textarea name="apple_private_key" rows="8" class="large-text" style="font-family:monospace;font-size:11px"
-                        placeholder="-----BEGIN PRIVATE KEY-----&#10;…&#10;-----END PRIVATE KEY-----"><?php echo esc_textarea( $s['apple_private_key'] ); ?></textarea></td>
-                </tr>
-                <tr>
-                    <th><label>Music User Token
-                        <span class="mw-help" data-tooltip="Apple erlaubt keinen serverseitigen OAuth.&#10;Du musst den Token einmal über MusicKit JS im Browser holen:&#10;1. Auf einer Webseite mit MusicKit JS einloggen&#10;2. music.authorize() aufrufen&#10;3. music.musicUserToken in der Browser-Konsole anzeigen lassen&#10;4. Hier einfügen&#10;Token läuft nach ~6 Monaten ab.">ℹ</span>
-                    </label></th>
-                    <td><textarea name="apple_user_token" rows="3" class="large-text" style="font-family:monospace;font-size:11px"><?php echo esc_textarea( $s['apple_user_token'] ); ?></textarea></td>
+                    <th><label>Music User Token</label></th>
+                    <td>
+                        <textarea name="apple_user_token" rows="3" class="large-text" style="font-family:monospace;font-size:11px"
+                            placeholder="Atxxx..."><?php echo esc_textarea( $s['apple_user_token'] ); ?></textarea>
+                    </td>
                 </tr>
                 <tr>
                     <th><label>Playlist-ID
@@ -107,6 +111,44 @@ $spotify_auth_url = MW_Spotify::build_auth_url( $redirect_uri );
                     <td><input type="text" name="apple_playlist_id" class="regular-text"
                         value="<?php echo esc_attr( $s['apple_playlist_id'] ); ?>"
                         placeholder="pl.u-xxxxxxx"></td>
+                </tr>
+                <tr>
+                    <th><label>Status</label></th>
+                    <td>
+                        <?php
+                        $status = MW_Apple_Health::status();
+                        $days   = MW_Apple_Health::days_remaining();
+                        switch ( $status ) {
+                            case 'ok':
+                                echo '<span class="mw-status mw-status--ok">✔ Gültig</span>';
+                                if ( $days !== null ) echo ' <span style="color:#666">(läuft in <strong>' . $days . '</strong> Tagen ab)</span>';
+                                break;
+                            case 'warn':
+                                echo '<span class="mw-status mw-status--warn">⚠ Erneuerung empfohlen</span>';
+                                echo ' <span style="color:#666">(läuft in <strong>' . $days . '</strong> Tagen ab)</span>';
+                                break;
+                            case 'urgent':
+                                echo '<span class="mw-status mw-status--error">🚨 Bald abgelaufen</span>';
+                                echo ' <span style="color:#666">(noch <strong>' . $days . '</strong> Tag' . ( $days === 1 ? '' : 'e' ) . ')</span>';
+                                break;
+                            case 'expired':
+                            case 'failed':
+                                echo '<span class="mw-status mw-status--error">✘ Abgelaufen / ungültig</span>';
+                                break;
+                            default:
+                                echo '<span class="mw-status mw-status--error">✘ Nicht konfiguriert</span>';
+                        }
+                        ?>
+                        <button type="button" id="mw-test-apple" class="button" style="margin-left:10px">🔍 Tokens jetzt testen</button>
+                        <span id="mw-test-result" style="margin-left:10px"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label>Erinnerungs-E-Mail
+                        <span class="mw-help" data-tooltip="An diese Adresse wird automatisch eine Erinnerungs-Mail geschickt, sobald die Tokens in 14 Tagen ablaufen, sowie bei Ablauf bzw. Fehlern.">ℹ</span>
+                    </label></th>
+                    <td><input type="email" name="apple_notify_email" class="regular-text"
+                        value="<?php echo esc_attr( $s['apple_notify_email'] ); ?>"></td>
                 </tr>
             </table>
         </div>

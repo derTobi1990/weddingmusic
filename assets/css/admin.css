@@ -79,6 +79,7 @@
     margin-right: 10px;
 }
 .mw-status--ok    { background: #d8f5e3; color: #00612b; }
+.mw-status--warn  { background: #fff3cd; color: #7a5800; }
 .mw-status--error { background: #fde8e8; color: #8c1c1c; }
 
 .mw-btn-spotify { background: #1DB954 !important; color: #fff !important; border-color: #1DB954 !important; }

@@ -29,12 +29,14 @@ class MW_Settings {
             'spotify_playlist_id'   => '',
             'spotify_refresh_token' => '',
 
-            // Apple Music API
-            'apple_team_id'    => '',
-            'apple_key_id'     => '',
-            'apple_private_key' => '',
-            'apple_user_token' => '',
+            // Apple Music API (Browser-Tokens)
+            'apple_dev_token'   => '',
+            'apple_user_token'  => '',
             'apple_playlist_id' => '',
+            'apple_token_saved_at' => 0,    // Unix timestamp when tokens were saved
+            'apple_token_status'   => '',   // empty | 'ok' | 'expired'
+            'apple_notify_email'   => get_option( 'admin_email' ),
+            'apple_last_notified'  => 0,    // Unix timestamp of last reminder email
 
             // Farben
             'color_bg'      => '#1b3a3a',
@@ -57,22 +59,40 @@ class MW_Settings {
 
     public static function save( $data ) {
         $defaults = self::defaults();
+        $previous = self::get();
         $clean    = array();
         foreach ( $defaults as $key => $default ) {
             if ( ! isset( $data[ $key ] ) ) {
-                $clean[ $key ] = $default;
+                $clean[ $key ] = $previous[ $key ] ?? $default;
                 continue;
             }
             if ( strpos( $key, 'color_' ) === 0 ) {
                 $clean[ $key ] = sanitize_hex_color( $data[ $key ] ) ?: $default;
-            } elseif ( $key === 'apple_private_key' ) {
+            } elseif ( in_array( $key, array( 'apple_dev_token', 'apple_user_token' ) ) ) {
                 $clean[ $key ] = trim( $data[ $key ] );
             } elseif ( in_array( $key, array( 'form_intro', 'success_msg' ) ) ) {
                 $clean[ $key ] = sanitize_textarea_field( $data[ $key ] );
+            } elseif ( $key === 'apple_notify_email' ) {
+                $clean[ $key ] = sanitize_email( $data[ $key ] );
             } else {
                 $clean[ $key ] = sanitize_text_field( $data[ $key ] );
             }
         }
+
+        // If Apple tokens were updated, refresh the saved-at timestamp
+        $tokens_changed = ( $clean['apple_dev_token'] !== ($previous['apple_dev_token'] ?? '') )
+            || ( $clean['apple_user_token'] !== ($previous['apple_user_token'] ?? '') );
+        if ( $tokens_changed && $clean['apple_dev_token'] && $clean['apple_user_token'] ) {
+            $clean['apple_token_saved_at'] = time();
+            $clean['apple_token_status']   = 'ok';
+            $clean['apple_last_notified']  = 0;
+        } else {
+            // Preserve existing timestamps
+            $clean['apple_token_saved_at'] = $previous['apple_token_saved_at'] ?? 0;
+            $clean['apple_token_status']   = $previous['apple_token_status'] ?? '';
+            $clean['apple_last_notified']  = $previous['apple_last_notified'] ?? 0;
+        }
+
         update_option( self::OPTION, $clean );
     }
 

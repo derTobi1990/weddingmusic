@@ -11,7 +11,7 @@ $msgs  = array(
 $tables_ok = MW_Database::tables_exist();
 $s = MW_Settings::get();
 $spotify_ready = $s['spotify_client_id'] && $s['spotify_refresh_token'] && $s['spotify_playlist_id'];
-$apple_ready   = $s['apple_team_id'] && $s['apple_user_token'] && $s['apple_playlist_id'];
+$apple_ready   = $s['apple_dev_token'] && $s['apple_user_token'] && $s['apple_playlist_id'];
 ?>
 <div class="wrap mw-wrap">
     <h1>🎵 Musikwünsche

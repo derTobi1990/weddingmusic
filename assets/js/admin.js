@@ -30,5 +30,29 @@
         $('.mw-help').each(function () {
             $(this).attr('title', $(this).data('tooltip'));
         });
+
+        // Apple token test button
+        $('#mw-test-apple').on('click', function () {
+            var $btn = $(this);
+            var $result = $('#mw-test-result');
+            $btn.prop('disabled', true).text('Wird geprüft…');
+            $result.html('').css('color', '');
+
+            $.post(MW_ADMIN.ajaxurl, {
+                action: 'mw_test_apple',
+                nonce: MW_ADMIN.nonce
+            }, function (res) {
+                if (res.success) {
+                    $result.text(res.data.message).css('color', '#00612b');
+                    setTimeout(function () { window.location.reload(); }, 1200);
+                } else {
+                    $result.text('✘ ' + (res.data ? res.data.message : 'Fehler')).css('color', '#8c1c1c');
+                }
+            }).fail(function () {
+                $result.text('Verbindungsfehler').css('color', '#8c1c1c');
+            }).always(function () {
+                $btn.prop('disabled', false).text('🔍 Tokens jetzt testen');
+            });
+        });
     });
 }(jQuery));
