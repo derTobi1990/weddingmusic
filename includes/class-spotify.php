@@ -198,6 +198,35 @@ class MW_Spotify {
         return array( 'success' => false, 'error' => "HTTP {$code}: {$msg}" );
     }
 
+    /** Remove track from configured playlist */
+    public static function remove_from_playlist( $track_id ) {
+        $token       = self::get_user_token();
+        $playlist_id = MW_Settings::get( 'spotify_playlist_id' );
+        if ( ! $token || ! $playlist_id ) {
+            return array( 'success' => false, 'error' => 'Spotify nicht konfiguriert.' );
+        }
+
+        $url = sprintf( self::PLAYLIST_URL, $playlist_id );
+        $response = wp_remote_request( $url, array(
+            'method'  => 'DELETE',
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $token,
+                'Content-Type'  => 'application/json',
+            ),
+            'body'    => json_encode( array( 'tracks' => array(
+                array( 'uri' => "spotify:track:{$track_id}" )
+            ) ) ),
+            'timeout' => 15,
+        ) );
+
+        if ( is_wp_error( $response ) ) {
+            return array( 'success' => false, 'error' => $response->get_error_message() );
+        }
+        $code = wp_remote_retrieve_response_code( $response );
+        if ( $code === 200 || $code === 204 ) return array( 'success' => true );
+        return array( 'success' => false, 'error' => "HTTP {$code}: " . substr( wp_remote_retrieve_body( $response ), 0, 200 ) );
+    }
+
     /** Build OAuth authorization URL for the admin to authorize the playlist */
     public static function build_auth_url( $redirect_uri ) {
         $client_id = MW_Settings::get( 'spotify_client_id' );

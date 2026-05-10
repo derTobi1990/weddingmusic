@@ -71,8 +71,28 @@ class MW_Admin {
                 exit;
 
             case 'delete_wunsch':
-                MW_Wunsch::delete( absint( $_POST['id'] ) );
-                wp_redirect( admin_url( 'admin.php?page=musikwuensche&msg=deleted' ) );
+                $id = absint( $_POST['id'] );
+                $w  = MW_Wunsch::get( $id );
+                $messages = array();
+                if ( $w ) {
+                    // Try to remove from Spotify playlist
+                    if ( $w->spotify_added && $w->spotify_id ) {
+                        $r = MW_Spotify::remove_from_playlist( $w->spotify_id );
+                        if ( ! $r['success'] ) {
+                            $messages[] = 'spotify_fail';
+                        }
+                    }
+                    // Try to remove from Apple Music playlist
+                    if ( $w->apple_added && $w->apple_id ) {
+                        $r = MW_Apple_Music::remove_from_playlist( $w->apple_id );
+                        if ( ! $r['success'] ) {
+                            $messages[] = 'apple_fail';
+                        }
+                    }
+                    MW_Wunsch::delete( $id );
+                }
+                $msg = empty( $messages ) ? 'deleted' : implode( '_', $messages ) . '_deleted';
+                wp_redirect( admin_url( 'admin.php?page=musikwuensche&msg=' . $msg ) );
                 exit;
 
             case 'save_settings':

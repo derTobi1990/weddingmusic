@@ -162,6 +162,79 @@ class MW_Apple_Music {
         return array( 'success' => false, 'error' => "HTTP {$code}: " . substr( wp_remote_retrieve_body( $response ), 0, 200 ) );
     }
 
+    /**
+     * Remove a track from a library playlist.
+     * Apple's API requires the library-playlist-track-id, not the catalog ID.
+     * We fetch the playlist's tracks first to find the matching one.
+     */
+    public static function remove_from_playlist( $catalog_track_id ) {
+        $dev_token   = self::get_developer_token();
+        $user_token  = MW_Settings::get( 'apple_user_token' );
+        $playlist_id = MW_Settings::get( 'apple_playlist_id' );
+
+        if ( ! $dev_token || ! $user_token || ! $playlist_id ) {
+            return array( 'success' => false, 'error' => 'Apple Music nicht konfiguriert.' );
+        }
+
+        // Fetch playlist tracks to find the library-track-id matching this catalog track
+        $tracks_url = "https://api.music.apple.com/v1/me/library/playlists/{$playlist_id}/tracks?limit=100&include=catalog";
+        $response = wp_remote_get( $tracks_url, array(
+            'headers' => array(
+                'Authorization'    => 'Bearer ' . $dev_token,
+                'Music-User-Token' => $user_token,
+                'Origin'           => 'https://music.apple.com',
+            ),
+            'timeout' => 15,
+        ) );
+        if ( is_wp_error( $response ) ) {
+            return array( 'success' => false, 'error' => $response->get_error_message() );
+        }
+        $body = json_decode( wp_remote_retrieve_body( $response ), true );
+        if ( empty( $body['data'] ) ) {
+            return array( 'success' => false, 'error' => 'Konnte Playlist-Tracks nicht laden.' );
+        }
+
+        // Find library-track that maps to our catalog track
+        $library_track_id = null;
+        foreach ( $body['data'] as $track ) {
+            // Match via catalog ID in playParams or in relationships.catalog
+            $play_params = $track['attributes']['playParams'] ?? array();
+            if ( ! empty( $play_params['catalogId'] ) && $play_params['catalogId'] === $catalog_track_id ) {
+                $library_track_id = $track['id'];
+                break;
+            }
+            // Alternative: relationships.catalog.data[0].id
+            $catalog = $track['relationships']['catalog']['data'][0]['id'] ?? null;
+            if ( $catalog === $catalog_track_id ) {
+                $library_track_id = $track['id'];
+                break;
+            }
+        }
+
+        if ( ! $library_track_id ) {
+            // Track not in playlist – treat as success (already removed)
+            return array( 'success' => true, 'message' => 'Song war nicht in der Playlist.' );
+        }
+
+        // Delete via library-tracks endpoint
+        $del_url = "https://api.music.apple.com/v1/me/library/playlists/{$playlist_id}/tracks/{$library_track_id}";
+        $del = wp_remote_request( $del_url, array(
+            'method'  => 'DELETE',
+            'headers' => array(
+                'Authorization'    => 'Bearer ' . $dev_token,
+                'Music-User-Token' => $user_token,
+                'Origin'           => 'https://music.apple.com',
+            ),
+            'timeout' => 15,
+        ) );
+        if ( is_wp_error( $del ) ) {
+            return array( 'success' => false, 'error' => $del->get_error_message() );
+        }
+        $code = wp_remote_retrieve_response_code( $del );
+        if ( $code === 204 || $code === 200 ) return array( 'success' => true );
+        return array( 'success' => false, 'error' => "HTTP {$code}: " . substr( wp_remote_retrieve_body( $del ), 0, 200 ) );
+    }
+
     private static function format_duration( $ms ) {
         $sec = (int) floor( $ms / 1000 );
         return sprintf( '%d:%02d', floor( $sec / 60 ), $sec % 60 );

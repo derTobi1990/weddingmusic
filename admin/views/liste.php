@@ -3,10 +3,13 @@ $rows  = MW_Wunsch::get_all();
 $stats = MW_Wunsch::get_stats();
 $msg   = isset( $_GET['msg'] ) ? $_GET['msg'] : '';
 $msgs  = array(
-    'added'    => 'Wunsch hinzugefügt.',
-    'updated'  => 'Wunsch aktualisiert.',
-    'deleted'  => 'Wunsch gelöscht.',
-    'repaired' => 'Datenbank repariert.',
+    'added'                       => 'Wunsch hinzugefügt.',
+    'updated'                     => 'Wunsch aktualisiert.',
+    'deleted'                     => 'Wunsch gelöscht und aus Playlists entfernt.',
+    'spotify_fail_deleted'        => 'Wunsch gelöscht, konnte aber nicht aus Spotify-Playlist entfernt werden.',
+    'apple_fail_deleted'          => 'Wunsch gelöscht, konnte aber nicht aus Apple-Music-Playlist entfernt werden.',
+    'spotify_fail_apple_fail_deleted' => 'Wunsch gelöscht, konnte aber aus keiner der Playlists entfernt werden.',
+    'repaired'                    => 'Datenbank repariert.',
 );
 $tables_ok = MW_Database::tables_exist();
 $s = MW_Settings::get();
@@ -105,7 +108,7 @@ $apple_ready   = $s['apple_dev_token'] && $s['apple_user_token'] && $s['apple_pl
                     </button>
                 </td>
                 <td>
-                    <form method="post" style="display:inline" onsubmit="return confirm('Wunsch löschen?')">
+                    <form method="post" style="display:inline" onsubmit="return confirm('Wunsch löschen und aus Spotify/Apple-Playlists entfernen?')">
                         <?php wp_nonce_field( 'mw_nonce', 'mw_nonce_field' ); ?>
                         <input type="hidden" name="mw_action" value="delete_wunsch">
                         <input type="hidden" name="id" value="<?php echo $w->id; ?>">
