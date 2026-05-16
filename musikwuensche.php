@@ -1,45 +1,83 @@
-<?php
-/**
- * Plugin Name: Hochzeit Musikwünsche
- * Plugin URI:  https://alinaundtobias.de
- * Description: Sammelt Musikwünsche der Gäste mit Spotify/Apple Music Integration und automatischer Playlist-Synchronisation
- * Version:     1.6.1
- * Author:      Tobias Hirche
- * Text Domain: musikwuensche
- */
+<?php if ( ! defined( 'ABSPATH' ) ) exit;
+$s = MW_Settings::get();
+$spotify_ready = $s['spotify_client_id'] && $s['spotify_client_secret'];
+?>
+<div class="wrap mw-wrap">
+    <h1>+ Neuer Musikwunsch</h1>
+    <p>Im Backend angelegte Wünsche werden automatisch mit ⭐ als „vom Brautpaar" markiert.</p>
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+    <div class="mw-card">
+        <?php if ( $spotify_ready ) : ?>
+            <h2>🔍 Songsuche</h2>
+            <p>Tippe Titel oder Interpret ein und wähle einen Song aus den Vorschlägen – Felder werden automatisch befüllt.</p>
+            <div class="mw-search-field" style="margin-bottom:20px">
+                <input type="text" id="mw-admin-search" class="regular-text"
+                    placeholder="Song bei Spotify suchen…" autocomplete="off"
+                    style="width:100%;max-width:500px">
+                <div id="mw-admin-search-results"></div>
+            </div>
+            <hr>
+            <h3 style="margin-top:20px">Manuelle Eingabe</h3>
+        <?php else : ?>
+            <div class="notice notice-info inline">
+                <p>💡 Tipp: Wenn du Spotify in den <a href="<?php echo admin_url( 'admin.php?page=musikwuensche-einstellungen' ); ?>">Einstellungen</a> einrichtest,
+                kannst du hier direkt nach Songs suchen.</p>
+            </div>
+        <?php endif; ?>
 
-define( 'MW_VERSION',     '1.6.1' );
-define( 'MW_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
-define( 'MW_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
-define( 'MW_TABLE',       'musikwuensche' );
+        <form method="post">
+            <?php wp_nonce_field( 'mw_nonce', 'mw_nonce_field' ); ?>
+            <input type="hidden" name="mw_action" value="add_wunsch">
+            <table class="form-table">
+                <tr>
+                    <th><label for="titel">Titel *</label></th>
+                    <td><input type="text" id="titel" name="titel" class="regular-text" required></td>
+                </tr>
+                <tr>
+                    <th><label for="interpret">Interpret *</label></th>
+                    <td><input type="text" id="interpret" name="interpret" class="regular-text" required></td>
+                </tr>
+                <tr>
+                    <th><label for="spotify_url">Spotify-Link</label></th>
+                    <td><input type="url" id="spotify_url" name="spotify_url" class="large-text"
+                        placeholder="https://open.spotify.com/track/..."></td>
+                </tr>
+                <tr>
+                    <th><label for="apple_url">Apple-Music-Link</label></th>
+                    <td><input type="url" id="apple_url" name="apple_url" class="large-text"
+                        placeholder="https://music.apple.com/de/album/.../i=..."></td>
+                </tr>
+            </table>
+            <p class="submit">
+                <button class="button button-primary">★ Hinzufügen</button>
+                <a href="<?php echo admin_url( 'admin.php?page=musikwuensche' ); ?>" class="button">Abbrechen</a>
+            </p>
+        </form>
+    </div>
+</div>
 
-// GitHub Updater config (in wp-config.php überschreibbar)
-if ( ! defined( 'MW_GITHUB_REPO' ) )  define( 'MW_GITHUB_REPO',  '' );
-if ( ! defined( 'MW_GITHUB_TOKEN' ) ) define( 'MW_GITHUB_TOKEN', '' );
-
-require_once MW_PLUGIN_DIR . 'includes/class-database.php';
-require_once MW_PLUGIN_DIR . 'includes/class-settings.php';
-require_once MW_PLUGIN_DIR . 'includes/class-wunsch.php';
-require_once MW_PLUGIN_DIR . 'includes/class-spotify.php';
-require_once MW_PLUGIN_DIR . 'includes/class-apple-music.php';
-require_once MW_PLUGIN_DIR . 'includes/class-apple-health.php';
-require_once MW_PLUGIN_DIR . 'includes/class-export.php';
-require_once MW_PLUGIN_DIR . 'includes/class-updater.php';
-require_once MW_PLUGIN_DIR . 'admin/admin-menu.php';
-require_once MW_PLUGIN_DIR . 'frontend/shortcode.php';
-
-register_activation_hook( __FILE__, array( 'MW_Database', 'install' ) );
-register_uninstall_hook( __FILE__, array( 'MW_Database', 'uninstall' ) );
-register_deactivation_hook( __FILE__, function () {
-    if ( class_exists( 'MW_Apple_Health' ) ) {
-        MW_Apple_Health::deactivate();
-    }
-} );
-
-MW_Apple_Health::init();
-
-if ( MW_GITHUB_REPO && is_admin() ) {
-    new MW_Updater( __FILE__, MW_GITHUB_REPO, MW_GITHUB_TOKEN );
+<style>
+#mw-admin-search-results {
+    margin-top: 8px;
+    max-width: 500px;
 }
+.mw-admin-result {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: #f6f7f7;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+.mw-admin-result:hover { background: #e7eef0; }
+.mw-admin-result.is-selected { border-color: #2271b1; background: #e7eef0; }
+.mw-admin-result img { width: 40px; height: 40px; border-radius: 3px; object-fit: cover; flex-shrink: 0; }
+.mw-admin-result-meta { flex: 1; min-width: 0; }
+.mw-admin-result-meta strong { display: block; font-size: 13px; }
+.mw-admin-result-meta span { display: block; color: #666; font-size: 12px; }
+.mw-admin-result-duration { color: #888; font-size: 12px; }
+</style>

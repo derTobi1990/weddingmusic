@@ -1,42 +1,104 @@
-# Hochzeit Musikwünsche Plugin
+/* Musikwünsche Admin Styles */
 
-Sammelt Musikwünsche der Gäste über die Website und synchronisiert diese automatisch in Spotify- und Apple-Music-Playlists.
+.mw-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+}
+.mw-stat {
+    background: #fff;
+    border-left: 4px solid #c9a94d;
+    padding: 14px 16px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.mw-stat-num {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: #c9a94d;
+}
+.mw-stat span:not(.mw-stat-num) {
+    display: block;
+    font-size: 12px;
+    color: #555;
+    margin-top: 2px;
+}
 
-## Features
+.mw-row--couple {
+    background: #fffbeb !important;
+}
 
-- **Frontend-Formular** mit Live-Suche bei Spotify (Tippen → Songs vorgeschlagen)
-- **Manuelle Eingabe** mit Titel, Interpret oder Spotify-/Apple-Music-Link
-- **Automatische Dublettenerkennung**: gleicher Titel + Interpret → Zähler steigt, alle Wünscher werden vermerkt
-- **Brautpaar-Markierung** ★ für eigene Eingaben im Backend
-- **Auto-Sync** in beide Playlists nach jedem Wunsch
-- **Backend-Liste** mit Direkt-Links zu Spotify/Apple Music und Re-Sync-Buttons
-- **Excel-Export** der gesamten Wunschliste
-- **Anpassbare Texte und Farben**
-- **GitHub-Auto-Update**
+.mw-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.mw-badge--multi {
+    background: #d8f5e3;
+    color: #00612b;
+}
 
-## Installation
+.mw-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    max-width: 900px;
+}
+.mw-card h2 {
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
 
-1. ZIP unter Plugins → Plugin hochladen einspielen
-2. Aktivieren – Datenbank wird automatisch angelegt
-3. Unter **🎵 Musikwünsche → ⚙ Einstellungen** die API-Keys eintragen
+.mw-help {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 50%;
+    background: #2271b1;
+    color: #fff;
+    font-size: 11px;
+    cursor: help;
+    margin-left: 6px;
+    font-weight: 600;
+}
 
-## Shortcode
+.mw-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    margin-right: 10px;
+}
+.mw-status--ok    { background: #d8f5e3; color: #00612b; }
+.mw-status--warn  { background: #fff3cd; color: #7a5800; }
+.mw-status--error { background: #fde8e8; color: #8c1c1c; }
 
-`[musikwuensche]` auf einer Seite einfügen (Avada: Shortcode-Element verwenden).
+.mw-btn-spotify { background: #1DB954 !important; color: #fff !important; border-color: #1DB954 !important; }
+.mw-btn-spotify:hover { opacity: .85; }
+.mw-btn-apple   { background: #fa243c !important; color: #fff !important; border-color: #fa243c !important; }
+.mw-btn-apple:hover { opacity: .85; }
+.mw-btn-danger  { color: #d63638 !important; border-color: #d63638 !important; }
+.mw-btn-danger:hover { background: #d63638 !important; color: #fff !important; }
 
-## Spotify einrichten
-
-1. https://developer.spotify.com/dashboard öffnen
-2. „Create app" → Name beliebig, Redirect URI aus den Plugin-Einstellungen kopieren
-3. Client ID + Client Secret in Plugin-Einstellungen eintragen → Speichern
-4. „Mit Spotify verbinden" klicken → autorisieren
-5. Playlist-ID eintragen (aus der Playlist-URL)
-
-## Apple Music einrichten
-
-Erfordert kostenpflichtige Apple-Developer-Mitgliedschaft (99 €/Jahr):
-
-1. https://developer.apple.com/account → Keys → MusicKit Key erstellen
-2. Team ID, Key ID und .p8-Datei-Inhalt in Plugin-Einstellungen eintragen
-3. Music User Token einmal über MusicKit JS holen und einfügen
-4. Playlist-ID eintragen
+.mw-badge-svc {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    margin-right: 4px;
+    margin-top: 3px;
+}
+.mw-badge-spotify { background: #1DB954; color: #fff; }
+.mw-badge-apple   { background: #fa243c; color: #fff; }
